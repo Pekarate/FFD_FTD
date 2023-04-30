@@ -55,7 +55,7 @@ bool valveOpenFeedback = false;
 bool valveClosedFeedback = false;
 bool IsbuzzerOn = false;
 bool IsstrobeOn = false;
-
+bool turnOnbuzzer = false;
 unsigned long valveOnOffTime = 0;
 unsigned long buzzerOnTime = 0;
 unsigned long strobeOnTime = 0;
@@ -77,6 +77,7 @@ int mutedigitalreadLow(int pin);
 
 void setup() {
   pinMode(OK_TO_RUN_PIN, INPUT_PULLUP);
+  pinMode(MUTE_PIN, INPUT_PULLUP);
   pinMode(POWER_OK_PIN, INPUT_PULLUP);
   pinMode(FLOAT_SWITCH_PIN, INPUT_PULLUP);
   pinMode(VALVE_PIN_MN, OUTPUT);
@@ -97,6 +98,14 @@ void loop() {
   
   okToRun = digitalRead(OK_TO_RUN_PIN);
   powerOk = digitalRead(POWER_OK_PIN);
+  if(!mutedigitalreadLow(MUTE_PIN))
+  {
+    turnOnbuzzer = false;
+    buzzerOff();
+    #if DEBUG_ENABLE
+        Serial.println("mute buzzer");
+    #endif
+  }
   if(okToRun && powerOk) {  
     if(system_mode == FTD_MODE){
         switch (FTD_state)
@@ -139,6 +148,7 @@ void loop() {
               #if DEBUG_ENABLE
                 Serial.println("open valve timout");
               #endif
+              turnOnbuzzer = true;
               FTD_state = FTD_STATE_ALARM;     // timeout 
             }
             break;
@@ -159,19 +169,24 @@ void loop() {
               #if DEBUG_ENABLE
                   Serial.println("valve close timout");
               #endif
+              turnOnbuzzer = true;
               FTD_state = FTD_STATE_ALARM;     // timeout 
+              
             }
             break;
           case FTD_STATE_ALARM:
-            buzzerOn();
-            strobeOn();
-            if(mutedigitalreadLow(MUTE_PIN))
-            {
+            if(turnOnbuzzer)
+              buzzerOn();
+            else
               buzzerOff();
+            strobeOn();
+            closeValve();
+            if(!digitalRead(VALVE_CLOSED_FEEDBACK_PIN)) //valve ok
+            {
               #if DEBUG_ENABLE
-                  Serial.println("mute buzzer");
+                Serial.println("valve closed");
               #endif
-              FTD_state = FTD_STATE_CHECK_FLOAT;
+              FTD_state = FTD_STATE_DONE; // closed
             }
             break;
           case FTD_STATE_DONE:
