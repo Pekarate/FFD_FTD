@@ -24,7 +24,7 @@ typedef enum
     FTD_STATE_CHECK_FLOAT=0,
     FTD_STATE_OPEN_VALVE,
     FTD_STATE_CLOSE_VALVE,
-    FTD_STATE_ALARM,
+    FTD_STATE_ALARM,  
     FTD_STATE_DONE
 }_FTD_state;
 
@@ -96,8 +96,8 @@ void setup() {
 
 void loop() {
   
-  okToRun = digitalRead(OK_TO_RUN_PIN);
-  powerOk = digitalRead(POWER_OK_PIN);
+  okToRun = !digitalRead(OK_TO_RUN_PIN);
+  powerOk = !digitalRead(POWER_OK_PIN);
   if(!mutedigitalreadLow(MUTE_PIN))
   {
     turnOnbuzzer = false;
